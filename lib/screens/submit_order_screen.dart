@@ -163,7 +163,7 @@ class _SubmitOrderScreenState extends State<SubmitOrderScreen> {
                   Expanded(
                     child: Center(
                       child: Image.asset(
-                        'lib/assets/images/logo.jpg',
+                        'assets/images/logo.jpg',
                         height: 100,
                       ),
                     ),

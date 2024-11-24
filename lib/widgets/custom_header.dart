@@ -24,7 +24,7 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: Center(
         child: Image.asset(
-          'lib/assets/images/logo.jpg', // logo
+          'assets/images/logo.jpg', // logo
           height: 100,
         ),
       ),

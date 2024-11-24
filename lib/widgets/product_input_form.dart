@@ -28,7 +28,11 @@ class _ProductInputFormState extends State<ProductInputForm> {
 
   void _addNewRow() {
     setState(() {
-      _controllers.add(ProductRowController());
+      final controller = ProductRowController();
+      controller.quantityController.addListener(() {
+        setState(() {}); // This will trigger a rebuild when quantity changes
+      });
+      _controllers.add(controller);
     });
   }
 
@@ -448,7 +452,7 @@ class ProductRowController {
 }
 
 // Update the ProductInputRow
-class ProductInputRow extends StatelessWidget {
+class ProductInputRow extends StatefulWidget {
   final ProductRowController controller;
   final VoidCallback onDelete;
   final VoidCallback onFocusRequest;
@@ -460,6 +464,11 @@ class ProductInputRow extends StatelessWidget {
     required this.onFocusRequest,
   }) : super(key: key);
 
+  @override
+  _ProductInputRowState createState() => _ProductInputRowState();
+}
+
+class _ProductInputRowState extends State<ProductInputRow> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ProductListProvider>(
@@ -478,7 +487,7 @@ class ProductInputRow extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.grey),
-                onPressed: onDelete,
+                onPressed: widget.onDelete,
                 iconSize: 20,
               ),
 
@@ -486,8 +495,8 @@ class ProductInputRow extends StatelessWidget {
               SizedBox(
                 width: 80,
                 child: TextFormField(
-                  controller: controller.quantityController,
-                  focusNode: controller.quantityFocusNode,
+                  controller: widget.controller.quantityController,
+                  focusNode: widget.controller.quantityFocusNode,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     border: InputBorder.none,
@@ -510,7 +519,7 @@ class ProductInputRow extends StatelessWidget {
                     if (int.tryParse(value) == null) return 'Invalid';
                     return null;
                   },
-                  onTap: onFocusRequest,
+                  onTap: widget.onFocusRequest,
                 ),
               ),
 
@@ -524,23 +533,30 @@ class ProductInputRow extends StatelessWidget {
               Expanded(
                 child: Autocomplete<String>(
                   optionsBuilder: (TextEditingValue textEditingValue) {
-                    return productProvider
+                    return context
+                        .read<ProductListProvider>()
                         .getSuggestions(textEditingValue.text);
                   },
                   onSelected: (String selection) {
-                    controller.nameController.text = selection;
+                    setState(() {
+                      widget.controller.nameController.text = selection;
+                    });
                   },
                   fieldViewBuilder:
-                      (context, textController, focusNode, onFieldSubmitted) {
+                      (context, controller, focusNode, onFieldSubmitted) {
+                    controller.addListener(() {
+                      setState(() {
+                        widget.controller.nameController.text = controller.text;
+                      });
+                    });
+
+                    controller.text = widget.controller.nameController.text;
                     return TextFormField(
-                      controller: textController,
+                      controller: controller,
                       focusNode: focusNode,
                       decoration: InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
+                        contentPadding: const EdgeInsets.all(16),
                         hintText: 'Enter product name',
                         hintStyle: GoogleFonts.publicSans(
                           color: Colors.grey,
@@ -552,10 +568,11 @@ class ProductInputRow extends StatelessWidget {
                         fontWeight: FontWeight.w300,
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Required';
+                        if (value == null || value.isEmpty) {
+                          return 'Required';
+                        }
                         return null;
                       },
-                      onTap: onFocusRequest,
                     );
                   },
                 ),
