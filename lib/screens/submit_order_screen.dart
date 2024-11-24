@@ -1,4 +1,3 @@
-// lib/screens/submit_order_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/order.dart';
@@ -22,7 +21,6 @@ class _SubmitOrderScreenState extends State<SubmitOrderScreen> {
       String title, String currentValue, Function(String) onSave) async {
     final TextEditingController controller =
         TextEditingController(text: currentValue);
-    String newValue = currentValue;
 
     try {
       await showDialog(
@@ -43,15 +41,10 @@ class _SubmitOrderScreenState extends State<SubmitOrderScreen> {
             style: GoogleFonts.publicSans(),
             maxLines:
                 title == 'Location' || title == 'Delivery instructions' ? 3 : 1,
-            onChanged: (value) {
-              newValue = value;
-            },
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 'Cancel',
                 style: GoogleFonts.publicSans(
@@ -61,7 +54,7 @@ class _SubmitOrderScreenState extends State<SubmitOrderScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                onSave(controller.text); // Save the new value
+                onSave(controller.text);
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(
@@ -82,57 +75,106 @@ class _SubmitOrderScreenState extends State<SubmitOrderScreen> {
     }
   }
 
-  Widget _buildEditableField(String label, String value, Function() onTap,
-      {bool isOptional = false}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.publicSans(
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
+  TableRow _buildTableRow(
+    String header,
+    String value, {
+    required Color headerColor,
+    Color? valueColor,
+    bool isEditable = false,
+    VoidCallback? onTap,
+    bool isOptional = false,
+  }) {
+    // Determine if this row should have bold text
+    bool isBoldRow = header == 'Order #' ||
+        header == 'Order name' ||
+        header == 'Delivery date';
+
+    return TableRow(
+      children: [
+        // Header cell remains the same
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                header,
+                style: GoogleFonts.publicSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: headerColor,
                 ),
-                if (isOptional)
-                  Text(
-                    ' (optional)',
-                    style: GoogleFonts.publicSans(
-                      color: Colors.grey,
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                    ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (isOptional && header == 'Order name')
+                Text(
+                  'optional',
+                  style: GoogleFonts.publicSans(
+                    color: Colors.grey,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w400,
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+        // Value cell with updated font weight for specific fields
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Expanded(
-                  child: Text(
-                    value,
-                    style: GoogleFonts.publicSans(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
+                  child: header == 'Location'
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delivery to:',
+                              style: GoogleFonts.publicSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: const Color.fromRGBO(144, 144, 144, 1),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              value,
+                              style: GoogleFonts.publicSans(
+                                fontSize: 16,
+                                color: valueColor ?? Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        )
+                      : Text(
+                          value,
+                          style: GoogleFonts.publicSans(
+                            fontSize: 16,
+                            fontWeight: isBoldRow
+                                ? FontWeight.w600
+                                : FontWeight.w400, // Updated this line
+                            color: valueColor ?? Colors.black87,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                ),
+                if (isEditable) const SizedBox(width: 8),
+                if (isEditable)
+                  Icon(
+                    Icons.edit,
+                    size: 18,
+                    color: Colors.grey[400],
                   ),
-                ),
-                Icon(
-                  Icons.edit,
-                  size: 18,
-                  color: Colors.grey[400],
-                ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -140,7 +182,6 @@ class _SubmitOrderScreenState extends State<SubmitOrderScreen> {
   Widget build(BuildContext context) {
     int totalQuantity =
         widget.order.items.map((item) => item.quantity).reduce((a, b) => a + b);
-
     double estimatedTotal = widget.order.items
         .map((item) => item.quantity * 36.92)
         .reduce((a, b) => a + b);
@@ -150,204 +191,205 @@ class _SubmitOrderScreenState extends State<SubmitOrderScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with back button and logo
             Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+              child: Column(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Navigator.pop(context),
-                    color: Colors.black,
-                  ),
-                  Expanded(
-                    child: Center(
+                  Center(
+                    child: SizedBox(
+                      width: 123,
                       child: Image.asset(
                         'assets/images/logo.jpg',
-                        height: 100,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48),
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: const Color.fromRGBO(0, 107, 131, 1),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
                 ],
               ),
             ),
-
-            // Form Fields
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            Column(
+              children: [
+                Row(
                   children: [
-                    _buildField(
-                      'Order #',
-                      widget.order.orderNumber,
-                      const TextStyle(
-                        color: Colors.purple,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Table(
+                          columnWidths: const {
+                            0: IntrinsicColumnWidth(flex: 1),
+                            1: FlexColumnWidth(2),
+                          },
+                          defaultVerticalAlignment:
+                              TableCellVerticalAlignment.middle,
+                          children: [
+                            _buildTableRow(
+                              'Order #',
+                              widget.order.orderNumber,
+                              headerColor: const Color.fromRGBO(80, 0, 185, 1),
+                              valueColor: const Color.fromRGBO(0, 107, 131, 1),
+                              isEditable: false,
+                            ),
+                            _buildTableRow(
+                              'Order name',
+                              orderName,
+                              headerColor: const Color.fromRGBO(80, 0, 185, 1),
+                              valueColor: const Color.fromRGBO(0, 107, 131, 1),
+                              isEditable: true,
+                              onTap: () => _showEditDialog(
+                                  'Order name',
+                                  orderName,
+                                  (value) => setState(() => orderName = value)),
+                              isOptional: true,
+                            ),
+                            _buildTableRow(
+                              'Delivery date',
+                              deliveryDate,
+                              headerColor: const Color.fromRGBO(80, 0, 185, 1),
+                              valueColor: const Color.fromRGBO(0, 107, 131, 1),
+                              isEditable: true,
+                              onTap: () => _showEditDialog(
+                                  'Delivery date',
+                                  deliveryDate,
+                                  (value) =>
+                                      setState(() => deliveryDate = value)),
+                            ),
+                            _buildTableRow(
+                              'Total quantity',
+                              totalQuantity.toString(),
+                              headerColor: const Color.fromRGBO(80, 0, 185, 1),
+                              isEditable: false,
+                            ),
+                            _buildTableRow(
+                              'Estimated total',
+                              '\$${estimatedTotal.toStringAsFixed(2)}',
+                              headerColor: const Color.fromRGBO(80, 0, 185, 1),
+                              isEditable: false,
+                            ),
+                            _buildTableRow(
+                              'Location',
+                              location,
+                              headerColor: const Color.fromRGBO(80, 0, 185, 1),
+                              isEditable: true,
+                              onTap: () => _showEditDialog('Location', location,
+                                  (value) => setState(() => location = value)),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    _buildEditableField(
-                      'Order name',
-                      orderName,
-                      () async {
-                        await _showEditDialog('Order name', orderName, (value) {
-                          if (mounted) {
-                            // Check if widget is still mounted
-                            setState(() => orderName = value);
-                          }
-                        });
-                      },
-                      isOptional: true,
-                    ),
-                    // Delivery Date (Editable)
-                    _buildEditableField(
-                      'Delivery date',
-                      deliveryDate,
-                      () async {
-                        await _showEditDialog('Delivery date', deliveryDate,
-                            (value) {
-                          if (mounted) {
-                            setState(() => deliveryDate = value);
-                          }
-                        });
-                      },
-                    ),
-                    _buildField('Total quantity', totalQuantity.toString()),
-                    _buildField(
-                      'Estimated total',
-                      '\$${estimatedTotal.toStringAsFixed(2)}',
-                    ),
-                    // Location (Editable)
-                    _buildEditableField(
-                      'Location',
-                      location,
-                      () async {
-                        await _showEditDialog('Location', location, (value) {
-                          if (mounted) {
-                            setState(() => location = value);
-                          }
-                        });
-                      },
-                    ),
-                    _buildEditableField(
-                      'Delivery instructions',
-                      deliveryInstructions.isEmpty
-                          ? '...'
-                          : deliveryInstructions,
-                      () async {
-                        await _showEditDialog(
-                            'Delivery instructions', deliveryInstructions,
-                            (value) {
-                          if (mounted) {
-                            setState(() => deliveryInstructions = value);
-                          }
-                        });
-                      },
-                      isOptional: true,
-                    ),
-                    const SizedBox(height: 24),
                   ],
                 ),
-              ),
-            ),
-
-            // Bottom Buttons
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Order submitted successfully!'),
-                            backgroundColor: Colors.green,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: () async {
+                          await _showEditDialog(
+                            'Delivery instructions',
+                            deliveryInstructions,
+                            (value) =>
+                                setState(() => deliveryInstructions = value),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          alignment: Alignment.centerLeft,
+                        ),
+                        child: Text(
+                          'Delivery instructions ...',
+                          style: GoogleFonts.publicSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color.fromRGBO(0, 107, 131, 1),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007BA7),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: Text(
-                        'submit',
-                        style: GoogleFonts.publicSans(
-                          color: Colors.white,
-                          fontSize: 16,
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Order submitted successfully!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF007BA7),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'submit',
+                            style: GoogleFonts.publicSans(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      // Replace the existing TextButton for "Save as draft" with this:
+                      TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Saved as draft'),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          alignment: Alignment
+                              .centerLeft, // Align the button content to the left
+                        ),
+                        child: Text(
+                          'Save as draft',
+                          style: GoogleFonts.publicSans(
+                            color: const Color(0xFF007BA7),
+                            fontSize: 14, // Changed from 16 to 14
+                            fontWeight: FontWeight.w600, // Changed to 600
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Saved as draft'),
-                          backgroundColor: Colors.blue,
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'Save as draft',
-                      style: GoogleFonts.publicSans(
-                        color: const Color(0xFF007BA7),
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // The original _buildField method remains the same
-  Widget _buildField(String label, String value, [TextStyle? valueStyle]) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.publicSans(
-              color: label == 'Order #' ? Colors.purple : Colors.black,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: valueStyle ??
-                GoogleFonts.publicSans(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-          ),
-        ],
       ),
     );
   }

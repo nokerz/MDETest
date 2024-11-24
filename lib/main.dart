@@ -39,14 +39,9 @@ class ProductInputScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: const CustomHeader(),
-      body: Container(
-        color: Colors.white,
-        child: const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: ProductInputForm(),
-        ),
-      ),
+      body: ProductInputForm(),
     );
   }
 }

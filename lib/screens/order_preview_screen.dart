@@ -34,174 +34,208 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const CustomHeader(), // Replace the AppBar with CustomHeader
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Order Number Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            child: Row(
-              children: [
-                Text(
-                  'Order #',
-                  style: GoogleFonts.publicSans(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple,
-                  ),
-                ),
-                Text(
-                  widget.order.orderNumber,
-                  style: GoogleFonts.publicSans(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Items Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(
-                    'Qty',
-                    style: GoogleFonts.publicSans(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'Product Name',
-                    style: GoogleFonts.publicSans(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Items List
-          Expanded(
-            child: ListView.builder(
-              itemCount: widget.order.items.length,
-              // Update the item builder in ListView.builder
-              itemBuilder: (context, index) {
-                final item = widget.order.items[index];
-                return InkWell(
-                  onLongPress: () => _showItemDetails(item),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.withOpacity(0.2),
-                        ),
+      appBar: const CustomHeader(),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Navigation Bar
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                        color: const Color.fromRGBO(0, 107, 131, 1),
+                        size: 24,
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 80,
-                            child: Text(
-                              item.quantity.toString(),
-                              style: GoogleFonts.publicSans(
-                                fontSize: 16,
-                              ),
-                            ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                SubmitOrderScreen(order: widget.order),
                           ),
-                          Expanded(
-                            child: Text(
-                              item.productName,
-                              style: GoogleFonts.publicSans(
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          if (item.notes?.isNotEmpty ?? false)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 4),
-                              child: Icon(
-                                Icons.info_outline,
-                                color: Colors.blue,
-                                size: 20,
-                              ),
-                            ),
-                          if (item.images.isNotEmpty)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 4),
-                              child: Icon(
-                                Icons.image_outlined,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                            ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
+                  ],
+                ),
+              ),
 
-          // Action Buttons
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              SubmitOrderScreen(order: widget.order),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      minimumSize: const Size(0, 48),
-                    ),
-                    child: Text(
-                      'Confirm Order',
+              // Order Number Header
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Text(
+                      'Order #',
                       style: GoogleFonts.publicSans(
-                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color.fromRGBO(80, 0, 185, 1),
                       ),
                     ),
+                    Text(
+                      ' 112',
+                      style: GoogleFonts.publicSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color.fromRGBO(0, 107, 131, 1),
+                      ),
+                    ),
+                    Text(
+                      widget.order.orderNumber.substring(3),
+                      style: GoogleFonts.publicSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color.fromRGBO(0, 107, 131, 1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Table Container
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: SizedBox(
+                    width: 342.99,
+                    height: 675,
+                    child: LayoutBuilder(
+                      builder:
+                          (BuildContext context, BoxConstraints constraints) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              // Table Body
+                              Expanded(
+                                child: ListView.builder(
+                                  itemCount:
+                                      20, // Show all 20 rows like in input form
+                                  itemBuilder: (context, index) {
+                                    final isFilledRow =
+                                        index < widget.order.items.length;
+                                    final item = isFilledRow
+                                        ? widget.order.items[index]
+                                        : null;
+
+                                    return InkWell(
+                                      onLongPress: isFilledRow
+                                          ? () => _showItemDetails(item!)
+                                          : null,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: const Color.fromRGBO(
+                                                  0, 107, 131, 1),
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            // Quantity Field
+                                            Container(
+                                              width:
+                                                  constraints.maxWidth * 0.16,
+                                              decoration: BoxDecoration(
+                                                border: Border(
+                                                  right: BorderSide(
+                                                    color: const Color.fromRGBO(
+                                                        0, 107, 131, 1),
+                                                    width: 0.5,
+                                                  ),
+                                                ),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 16,
+                                              ),
+                                              child: Text(
+                                                isFilledRow
+                                                    ? item!.quantity.toString()
+                                                    : '',
+                                                style: GoogleFonts.publicSans(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w300,
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Product Name Field
+                                            // Product Name Field
+                                            Expanded(
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(
+                                                    left: 8),
+                                                child: Row(
+                                                  children: [
+                                                    Text(
+                                                      isFilledRow
+                                                          ? item!.productName
+                                                          : '',
+                                                      style: GoogleFonts
+                                                          .publicSans(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                      ),
+                                                    ),
+                                                    if (isFilledRow &&
+                                                        (item!.notes
+                                                                ?.isNotEmpty ??
+                                                            false)) // Changed condition to check for notes
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 4),
+                                                        child: Icon(
+                                                          Icons.camera_alt,
+                                                          color: const Color
+                                                              .fromRGBO(
+                                                              0, 107, 131, 1),
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    Spacer(),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 48),
-                    ),
-                    child: Text(
-                      'Edit Order',
-                      style: GoogleFonts.publicSans(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

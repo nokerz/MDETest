@@ -1,4 +1,3 @@
-// lib/widgets/product_input_form.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:media_design_expert/models/order.dart';
@@ -6,7 +5,6 @@ import 'package:media_design_expert/screens/order_preview_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_list_provider.dart';
 
-// Update the ProductInputForm
 class ProductInputForm extends StatefulWidget {
   const ProductInputForm({Key? key}) : super(key: key);
 
@@ -18,26 +16,49 @@ class _ProductInputFormState extends State<ProductInputForm> {
   final _formKey = GlobalKey<FormState>();
   final List<ProductRowController> _controllers = [];
   final TextEditingController _orderNumberController =
-      TextEditingController(text: '096');
+      TextEditingController(text: '');
 
   @override
   void initState() {
     super.initState();
-    _addNewRow();
-  }
-
-  void _addNewRow() {
-    setState(() {
+    // Initialize 20 controllers
+    for (int i = 0; i < 20; i++) {
       final controller = ProductRowController();
       controller.quantityController.addListener(() {
-        setState(() {}); // This will trigger a rebuild when quantity changes
+        setState(() {});
       });
       _controllers.add(controller);
-    });
+    }
   }
 
   bool get hasFilledRows {
     return _controllers.any((controller) => controller.isRowFilled);
+  }
+
+  // Method to find first empty row
+  int findFirstEmptyRowIndex() {
+    for (int i = 0; i < _controllers.length; i++) {
+      if (!_controllers[i].isRowFilled) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  // Method to handle focus change
+  void handleFocusChange(int currentIndex, bool isQuantityField) {
+    if (currentIndex > 0) {
+      // Check if there are any empty rows above
+      int firstEmptyIndex = findFirstEmptyRowIndex();
+      if (firstEmptyIndex < currentIndex) {
+        // Move focus to the appropriate field in the first empty row
+        if (isQuantityField) {
+          _controllers[firstEmptyIndex].quantityFocusNode.requestFocus();
+        } else {
+          _controllers[firstEmptyIndex].nameFocusNode.requestFocus();
+        }
+      }
+    }
   }
 
   void _clean() {
@@ -46,17 +67,24 @@ class _ProductInputFormState extends State<ProductInputForm> {
         controller.dispose();
       }
       _controllers.clear();
-      _addNewRow();
+      // Reinitialize controllers
+      for (int i = 0; i < 20; i++) {
+        final controller = ProductRowController();
+        controller.quantityController.addListener(() {
+          setState(() {});
+        });
+        _controllers.add(controller);
+      }
     });
   }
 
   void _submit() {
-    if (_formKey.currentState!.validate() && hasFilledRows) {
-      // Create order object
+    if (hasFilledRows) {
+      final filledRows =
+          _controllers.where((controller) => controller.isRowFilled).toList();
       final order = Order(
         orderNumber: '112${_orderNumberController.text}',
-        items: _controllers
-            .where((controller) => controller.isRowFilled)
+        items: filledRows
             .map((controller) => OrderItem(
                   productName: controller.nameController.text,
                   quantity: int.parse(controller.quantityController.text),
@@ -64,7 +92,6 @@ class _ProductInputFormState extends State<ProductInputForm> {
             .toList(),
       );
 
-      // Navigate to preview screen
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -74,351 +101,294 @@ class _ProductInputFormState extends State<ProductInputForm> {
     }
   }
 
-  int findFirstEmptyRowIndex() {
-    return _controllers.indexWhere((controller) => !controller.isRowFilled);
+  String? validateQuantity(String? value) {
+    if (value != null && value.isNotEmpty) {
+      if (int.tryParse(value) == null) {
+        return 'Invalid';
+      }
+    }
+    return null;
+  }
+
+  String? validateProductName(String? value) {
+    return null; // No validation required
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Form(
-        // Add Form widget here
-        key: _formKey, // Add form key
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Navigation Bar
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // X Icon (Clean)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.grey,
-                      size: 24,
-                    ),
-                    onPressed: _clean,
-                  ),
-
-                  // Right Arrow (Preview)
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_forward,
-                      color: hasFilledRows ? Colors.blue : Colors.grey,
-                      size: 24,
-                    ),
-                    onPressed: hasFilledRows
-                        ? () {
-                            if (_formKey.currentState!.validate()) {
-                              // Create order object
-                              final order = Order(
-                                orderNumber:
-                                    '112${_orderNumberController.text}',
-                                items: _controllers
-                                    .where(
-                                        (controller) => controller.isRowFilled)
-                                    .map((controller) => OrderItem(
-                                          productName:
-                                              controller.nameController.text,
-                                          quantity: int.parse(controller
-                                              .quantityController.text),
-                                        ))
-                                    .toList(),
-                              );
-
-                              // Navigate to preview screen
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      OrderPreviewScreen(order: order),
-                                ),
-                              );
-                            }
-                          }
-                        : null,
-                  ),
-                ],
-              ),
-            ),
-
-            // Order Number Header
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Text(
-                    'Order # 112',
-                    style: GoogleFonts.publicSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purple,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 50,
-                    child: TextFormField(
-                      controller: _orderNumberController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 3,
-                      decoration: InputDecoration(
-                        counterText: '',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
+      backgroundColor: Colors.white,
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Navigation Bar
+              if (hasFilledRows)
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: Color.fromRGBO(0, 107, 131, 1),
+                          size: 24,
                         ),
+                        onPressed: _clean,
                       ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_forward,
+                          color: Color.fromRGBO(0, 107, 131, 1),
+                          size: 24,
+                        ),
+                        onPressed: _submit,
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Order Number Header
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Text(
+                      'Order #',
                       style: GoogleFonts.publicSans(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple,
+                        fontWeight: FontWeight.w600,
+                        color: const Color.fromRGBO(80, 0, 185, 1),
                       ),
                     ),
-                  ),
-                  Text(
-                    ' (allow edit)',
-                    style: GoogleFonts.publicSans(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
+                    Text(
+                      ' 112',
+                      style: GoogleFonts.publicSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color.fromRGBO(0, 107, 131, 1),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Table Container (rest of your existing code)
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      children: [
-                        // Table Header
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.blue,
-                              ),
-                            ),
+                    SizedBox(
+                      width: 100,
+                      child: TextFormField(
+                        controller: _orderNumberController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 3,
+                        decoration: InputDecoration(
+                          counterText: '',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 8,
                           ),
-                          child: Row(
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          hintText: '(allow edit)',
+                          hintStyle: GoogleFonts.publicSans(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        style: GoogleFonts.publicSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color.fromRGBO(0, 107, 131, 1),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Table Container
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: SizedBox(
+                    width: 342.99,
+                    height: 675,
+                    child: LayoutBuilder(
+                      builder:
+                          (BuildContext context, BoxConstraints constraints) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
                             children: [
-                              // Quantity Header
-                              Container(
-                                width: constraints.maxWidth * 0.2,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    right: BorderSide(
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Qty',
-                                  style: GoogleFonts.publicSans(
-                                    fontWeight: FontWeight.w300,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ),
-                              // Product Name Header
+                              // Table Body
                               Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Text(
-                                    'Product Name',
-                                    style: GoogleFonts.publicSans(
-                                      fontWeight: FontWeight.w300,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
+                                child: ListView.builder(
+                                  itemCount: _controllers.length,
+                                  itemBuilder: (context, index) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: const Color.fromRGBO(
+                                                0, 107, 131, 1),
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          // Quantity Field
+                                          Container(
+                                            width: constraints.maxWidth * 0.16,
+                                            decoration: BoxDecoration(
+                                              border: Border(
+                                                right: BorderSide(
+                                                  color: const Color.fromRGBO(
+                                                      0, 107, 131, 1),
+                                                  width: 0.5,
+                                                ),
+                                              ),
+                                            ),
+                                            child: TextFormField(
+                                              controller: _controllers[index]
+                                                  .quantityController,
+                                              focusNode: _controllers[index]
+                                                  .quantityFocusNode,
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              decoration: InputDecoration(
+                                                border: InputBorder.none,
+                                                hintText: '',
+                                                hintStyle:
+                                                    GoogleFonts.publicSans(
+                                                  fontWeight: FontWeight.w300,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              style: GoogleFonts.publicSans(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w300,
+                                              ),
+                                              validator: validateQuantity,
+                                              onTap: () => handleFocusChange(
+                                                  index, true),
+                                            ),
+                                          ),
+
+                                          // Product Name Field
+                                          Expanded(
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 8),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Autocomplete<String>(
+                                                      optionsBuilder:
+                                                          (TextEditingValue
+                                                              textEditingValue) {
+                                                        if (textEditingValue
+                                                            .text.isEmpty) {
+                                                          return const Iterable<
+                                                              String>.empty();
+                                                        }
+                                                        return context
+                                                            .read<
+                                                                ProductListProvider>()
+                                                            .getSuggestions(
+                                                                textEditingValue
+                                                                    .text);
+                                                      },
+                                                      onSelected:
+                                                          (String selection) {
+                                                        setState(() {
+                                                          _controllers[index]
+                                                              .nameController
+                                                              .text = selection;
+                                                        });
+                                                      },
+                                                      fieldViewBuilder: (context,
+                                                          textEditingController,
+                                                          focusNode,
+                                                          onFieldSubmitted) {
+                                                        if (textEditingController
+                                                                .text !=
+                                                            _controllers[index]
+                                                                .nameController
+                                                                .text) {
+                                                          textEditingController
+                                                                  .text =
+                                                              _controllers[
+                                                                      index]
+                                                                  .nameController
+                                                                  .text;
+                                                        }
+
+                                                        return TextFormField(
+                                                          controller:
+                                                              textEditingController,
+                                                          focusNode: focusNode,
+                                                          onTap: () =>
+                                                              handleFocusChange(
+                                                                  index, true),
+                                                          decoration:
+                                                              InputDecoration(
+                                                            border: InputBorder
+                                                                .none,
+                                                            hintText: '',
+                                                            hintStyle:
+                                                                GoogleFonts
+                                                                    .publicSans(
+                                                              color:
+                                                                  Colors.grey,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w300,
+                                                            ),
+                                                          ),
+                                                          style: GoogleFonts
+                                                              .publicSans(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.w300,
+                                                          ),
+                                                          onChanged: (value) {
+                                                            _controllers[index]
+                                                                .nameController
+                                                                .text = value;
+                                                          },
+                                                          validator:
+                                                              validateProductName,
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
                           ),
-                        ),
-
-                        // Table Body
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _controllers.length,
-                            itemBuilder: (context, index) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Quantity Field
-                                    Container(
-                                      width: constraints.maxWidth * 0.2,
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          right: BorderSide(
-                                            color: Colors.blue,
-                                          ),
-                                        ),
-                                      ),
-                                      child: TextFormField(
-                                        controller: _controllers[index]
-                                            .quantityController,
-                                        keyboardType: TextInputType.number,
-                                        decoration: InputDecoration(
-                                          border: InputBorder.none,
-                                          contentPadding:
-                                              const EdgeInsets.all(16),
-                                          hintText: '0',
-                                          hintStyle: GoogleFonts.publicSans(
-                                            fontWeight: FontWeight.w300,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        style: GoogleFonts.publicSans(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w300,
-                                        ),
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'Required';
-                                          }
-                                          if (int.tryParse(value) == null) {
-                                            return 'Invalid';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-
-                                    // Product Name Field
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(left: 8),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Autocomplete<String>(
-                                                optionsBuilder:
-                                                    (TextEditingValue
-                                                        textEditingValue) {
-                                                  return context
-                                                      .read<
-                                                          ProductListProvider>()
-                                                      .getSuggestions(
-                                                          textEditingValue
-                                                              .text);
-                                                },
-                                                onSelected: (String selection) {
-                                                  _controllers[index]
-                                                      .nameController
-                                                      .text = selection;
-                                                },
-                                                fieldViewBuilder: (context,
-                                                    controller,
-                                                    focusNode,
-                                                    onFieldSubmitted) {
-                                                  controller.text =
-                                                      _controllers[index]
-                                                          .nameController
-                                                          .text;
-                                                  return TextFormField(
-                                                    controller: controller,
-                                                    focusNode: focusNode,
-                                                    decoration: InputDecoration(
-                                                      border: InputBorder.none,
-                                                      contentPadding:
-                                                          const EdgeInsets.all(
-                                                              16),
-                                                      hintText:
-                                                          'Enter product name',
-                                                      hintStyle: GoogleFonts
-                                                          .publicSans(
-                                                        color: Colors.grey,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                      ),
-                                                    ),
-                                                    style:
-                                                        GoogleFonts.publicSans(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
-                                                    validator: (value) {
-                                                      if (value == null ||
-                                                          value.isEmpty) {
-                                                        return 'Required';
-                                                      }
-                                                      return null;
-                                                    },
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                            if (_controllers.length > 1)
-                                              IconButton(
-                                                icon: const Icon(Icons.delete,
-                                                    color: Colors.grey),
-                                                onPressed: () {
-                                                  setState(() {
-                                                    _controllers[index]
-                                                        .dispose();
-                                                    _controllers
-                                                        .removeAt(index);
-                                                  });
-                                                },
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-
-                        // Modified Action Buttons - only Add Product button
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: ElevatedButton(
-                            onPressed: _addNewRow,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              minimumSize: const Size(double.infinity, 48),
-                            ),
-                            child: Text(
-                              'Add Product',
-                              style: GoogleFonts.publicSans(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -449,138 +419,10 @@ class ProductRowController {
     nameFocusNode.dispose();
     quantityFocusNode.dispose();
   }
-}
 
-// Update the ProductInputRow
-class ProductInputRow extends StatefulWidget {
-  final ProductRowController controller;
-  final VoidCallback onDelete;
-  final VoidCallback onFocusRequest;
-
-  const ProductInputRow({
-    Key? key,
-    required this.controller,
-    required this.onDelete,
-    required this.onFocusRequest,
-  }) : super(key: key);
-
-  @override
-  _ProductInputRowState createState() => _ProductInputRowState();
-}
-
-class _ProductInputRowState extends State<ProductInputRow> {
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ProductListProvider>(
-      builder: (context, productProvider, child) {
-        if (productProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Colors.blue.withOpacity(0.2), width: 1),
-            ),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.grey),
-                onPressed: widget.onDelete,
-                iconSize: 20,
-              ),
-
-              // Quantity Field
-              SizedBox(
-                width: 80,
-                child: TextFormField(
-                  controller: widget.controller.quantityController,
-                  focusNode: widget.controller.quantityFocusNode,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 12,
-                    ),
-                    hintText: '0',
-                    hintStyle: GoogleFonts.publicSans(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                  style: GoogleFonts.publicSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w300,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Required';
-                    if (int.tryParse(value) == null) return 'Invalid';
-                    return null;
-                  },
-                  onTap: widget.onFocusRequest,
-                ),
-              ),
-
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.grey.withOpacity(0.3),
-              ),
-
-              // Product Name Field with Autocomplete
-              Expanded(
-                child: Autocomplete<String>(
-                  optionsBuilder: (TextEditingValue textEditingValue) {
-                    return context
-                        .read<ProductListProvider>()
-                        .getSuggestions(textEditingValue.text);
-                  },
-                  onSelected: (String selection) {
-                    setState(() {
-                      widget.controller.nameController.text = selection;
-                    });
-                  },
-                  fieldViewBuilder:
-                      (context, controller, focusNode, onFieldSubmitted) {
-                    controller.addListener(() {
-                      setState(() {
-                        widget.controller.nameController.text = controller.text;
-                      });
-                    });
-
-                    controller.text = widget.controller.nameController.text;
-                    return TextFormField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(16),
-                        hintText: 'Enter product name',
-                        hintStyle: GoogleFonts.publicSans(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
-                      style: GoogleFonts.publicSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w300,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        return null;
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  void syncControllers(TextEditingController externalController) {
+    if (externalController.text != nameController.text) {
+      nameController.text = externalController.text;
+    }
   }
 }
